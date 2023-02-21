@@ -1,0 +1,44 @@
+#!/bin/bash
+
+folder=ec:harmonie
+array=$(els -d $folder/*)
+
+echo "folders: $array"
+ 
+ for i in $array ; do
+  echo $i
+  folder2=$folder/$i
+  array2=$(els -d $folder2/*)
+  echgrp msdeode $folder2/*
+  for j in $array2 ; do
+   echo $j
+   folder3=$folder2/$j
+   array3=$(els -d $folder3/*)
+   echgrp msdeode $folder3/*
+   for k in $array3 ; do
+    echo $k
+    folder4=$folder3/$k
+    array4=$(els -d $folder4/*)
+    echgrp msdeode $folder4/*
+    for l in $array4 ; do
+     echo $l
+     folder5=$folder4/$l
+     array5=$(els -d $folder5/*)
+     echgrp msdeode $folder5/*
+     for m in $array5 ; do
+      echo $m
+      folder6=$folder5/$m
+      array6=$(els -d $folder6/*)
+      echgrp msdeode $folder6/*
+     for p in $array6 ; do
+      echo $p
+      folder7=$folder6/$p
+      array7=$(els -d $folder7/*)
+      echgrp msdeode $folder7/*
+     done
+    done
+   done
+  done
+ done
+done
+
