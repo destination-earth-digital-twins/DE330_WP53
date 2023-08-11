@@ -98,6 +98,25 @@ cat > namelist << EOF
  outfile = "$OUTDIR/SF/$outstep",
 /
 &naminterp
+ input_format="FA",
+ output_format='MEMORY',
+ infile = "$DEST/PFHARM${DOMAIN}+$instep"
+ pppkey%shortname='tpsolid',
+ pppkey%levtype='surface',
+ pppkey%level=000,
+ pppkey%tri=004,
+ lwrite_pponly=.TRUE.,
+/
+&naminterp
+ input_format="MEMORY",
+ output_format='GRIB2',
+ outfile = "$OUTDIR/SF/$outstep.pp",
+ readkey%shortname='tpsolid',
+ readkey%levtype='surface',
+ readkey%level=000,
+ readkey%tri=004,
+/
+&naminterp
  input_format="FA"
  READKEY%FANAME='SFX.SST','SFX.SIC'
  infile = "$DEST/ICMSHHARM+${instep}.sfx",
@@ -110,8 +129,8 @@ EOF
    $gl -n namelist
    rm namelist
 
-   cat $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SFX/$outstep > $OUTDIR/$outstep
-   rm $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SFX/$outstep
+   cat $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep > $OUTDIR/$outstep
+#   rm $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep
 
 done
-rm -rf $OUTDIR/ML $OUTDIR/SF $OUTDIR/SFX
+#rm -rf $OUTDIR/ML $OUTDIR/SF $OUTDIR/SFX
