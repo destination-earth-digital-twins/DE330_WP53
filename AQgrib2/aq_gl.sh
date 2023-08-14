@@ -125,12 +125,19 @@ cat > namelist << EOF
 /
 EOF
    
-   
+   echo "Postprocessing $outstep..."
+
    $gl -n namelist
+   echo "Removing namelist"
    rm namelist
 
+
    cat $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep > $OUTDIR/$outstep
-#   rm $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep
+   echo "Removing sub-files"
+   rm $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep
+   echo "Finished step $outstep"
 
 done
-#rm -rf $OUTDIR/ML $OUTDIR/SF $OUTDIR/SFX
+echo "Removing subfolders"
+rm -rf $OUTDIR/ML $OUTDIR/SF $OUTDIR/SFX
+echo "Finished job"
