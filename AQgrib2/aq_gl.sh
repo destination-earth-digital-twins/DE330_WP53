@@ -119,7 +119,7 @@ cat > namelist << EOF
 &naminterp
  input_format="FA"
  READKEY%FANAME='SFX.SST','SFX.SIC'
- infile = "$DEST/ICMSHHARM+${instep}.sfx",
+ infile = "$DEST/ICMSHSELE+${instep}.sfx",
  output_format = "FA2GRIB2",
  outfile = "$OUTDIR/SFX/$outstep",
 /
