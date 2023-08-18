@@ -70,7 +70,8 @@ mkdir -p $OUTDIR/SFX
 gl=/home/nhab/git/gl/ECMWF.atos.gnu/bin/gl
 
 
-for ((NN=0; NN <= LENGTH ; NN++));  do
+
+for ((NN=0; NN <= LENGTH ; NN+=$(($STEP)) )) ;  do
    echo $NN
    instep=$(printf "%04d" $NN)
    outstep=$(printf "%03d" $NN)
