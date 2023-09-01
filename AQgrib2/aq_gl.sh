@@ -15,7 +15,7 @@
 #
 # -i, INDIR:	Directory where to search for files
 # -o, OUTDIR:	Destination directory for output
-# -t, CTYPE:	Case-Type of simulation, so far 2 options: AQ and HYD
+# -c, CTYPE:	Case-Type of simulation, so far 2 options: AQ and HYD
 # -y, YYYY:	Year of output date
 # -m, MM:	Month of output date
 # -d, DD:	Day of output date
@@ -46,12 +46,12 @@
 
 
 
-while getopts i:o:t:y:m:d:h:D:l:s: flag
+while getopts i:o:c:y:m:d:h:D:l:s: flag
 do
     case "${flag}" in
         i) INDIR=${OPTARG};;
         o) OUTDIR=${OPTARG};;
-	t) CTYPE=${OPTARG};;
+	c) CTYPE=${OPTARG};;
         y) YYYY=${OPTARG};;
         m) MM=${OPTARG};;
         d) DD=${OPTARG};;
