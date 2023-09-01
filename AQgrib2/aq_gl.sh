@@ -15,6 +15,7 @@
 #
 # -i, INDIR:	Directory where to search for files
 # -o, OUTDIR:	Destination directory for output
+# -t, CTYPE:	Case-Type of simulation, so far 2 options: AQ and HYD
 # -y, YYYY:	Year of output date
 # -m, MM:	Month of output date
 # -d, DD:	Day of output date
@@ -45,11 +46,12 @@
 
 
 
-while getopts i:o:y:m:d:h:D:l:s: flag
+while getopts i:o:t:y:m:d:h:D:l:s: flag
 do
     case "${flag}" in
         i) INDIR=${OPTARG};;
         o) OUTDIR=${OPTARG};;
+	t) CTYPE=${OPTARG};;
         y) YYYY=${OPTARG};;
         m) MM=${OPTARG};;
         d) DD=${OPTARG};;
@@ -76,6 +78,8 @@ for ((NN=0; NN <= LENGTH ; NN+=$(($STEP)) )) ;  do
    instep=$(printf "%04d" $NN)
    outstep=$(printf "%03d" $NN)
 
+   if [ "$CTYPE" = "AQ" ] 
+   then
 cat > namelist << EOF
 &naminterp
  input_format="FA"
@@ -125,7 +129,51 @@ cat > namelist << EOF
  outfile = "$OUTDIR/SFX/$outstep",
 /
 EOF
-   
+   elif [ "$CTYPE" = "HYD" ]
+   then
+cat > namelist << EOF
+&naminterp
+ input_format="FA"
+ READKEY%FANAME='SURFIND.TERREMER'
+ infile = "$DEST/ICMSHHARM+$instep"
+ output_format = "FA2GRIB2",
+ outfile = "$OUTDIR/ML/$outstep",
+/
+&naminterp
+ input_format="FA"
+ READKEY%FANAME='SURFACCPLUIE','SURFACCNEIGE','SURFACCGRAUPEL',
+                'CLSTEMPERATURE','SURFINSNEIGE','SURFRESERV.NEIGE'
+ infile = "$DEST/PFHARM${DOMAIN}+$instep"
+ output_format = "FA2GRIB2",
+ outfile = "$OUTDIR/SF/$outstep",
+/
+&naminterp
+ input_format="FA",
+ output_format='MEMORY',
+ infile = "$DEST/PFHARM${DOMAIN}+$instep"
+ pppkey%shortname='tp','tpsolid',
+ pppkey%levtype='surface','surface',
+ pppkey%level=000,000,
+ pppkey%tri=004,004,
+ lwrite_pponly=.TRUE.,
+/
+&naminterp
+ input_format="MEMORY",
+ output_format='GRIB2',
+ outfile = "$OUTDIR/SF/$outstep.pp",
+ readkey%shortname='tp','tpsolid',
+ readkey%levtype='surface','surface',
+ readkey%level=000,000,
+ readkey%tri=004,004,
+/
+EOF
+   else
+	   echo "CTYPE IS $CTYPE "
+	   exit "CTYPE must be either 'AQ' og 'HYD'. Exiting..."
+   fi
+
+
+
    echo "Postprocessing $outstep..."
 
    $gl -n namelist
