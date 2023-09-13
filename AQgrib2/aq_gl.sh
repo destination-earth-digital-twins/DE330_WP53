@@ -46,7 +46,7 @@
 
 
 
-while getopts i:o:c:y:m:d:h:D:l:s: flag
+while getopts i:o:c:y:m:d:h:D:l:s:n:: flag
 do
     case "${flag}" in
         i) INDIR=${OPTARG};;
@@ -59,6 +59,7 @@ do
 	D) DOMAIN=${OPTARG};;
 	s) STEP=${OPTARG};;
 	l) LENGTH=${OPTARG};;
+	n) NAMLIN=${OPTARG};;
     esac
 done
 
@@ -70,8 +71,8 @@ mkdir -p $OUTDIR/SF
 mkdir -p $OUTDIR/ML
 mkdir -p $OUTDIR/SFX
 gl=/home/nhab/git/gl/ECMWF.atos.gnu/bin/gl
-
-
+prfx=fc$YYYY$MM$DD$HH
+sffx=.grib2
 
 for ((NN=0; NN <= LENGTH ; NN+=$(($STEP)) )) ;  do
    echo $NN
@@ -80,12 +81,13 @@ for ((NN=0; NN <= LENGTH ; NN+=$(($STEP)) )) ;  do
 
    if [ "$CTYPE" = "AQ" ] 
    then
-cat > namelist << EOF
+cat > $OUTDIR/namelist << EOF
 &naminterp
  input_format="FA"
  READKEY%FANAME='SNNNTEMPERATURE','SNNNWIND.U.PHYS','SNNNWIND.V.PHYS',
 		'SNNNHUMI.SPECIFI','SNNNLIQUID_WATER','SNNNSOLID_WATER',
-		'SNNNSNOW','SNNNGRAUPEL','SNNNRAIN','SNNNTKE','SURFIND.TERREMER'
+		'SNNNSNOW','SNNNGRAUPEL','SNNNRAIN','SNNNTKE','SURFIND.TERREMER',
+		'SNNNCLOUD_FRACTI'
  infile = "$DEST/ICMSHHARM+$instep"
  output_format = "FA2GRIB2",
  outfile = "$OUTDIR/ML/$outstep",
@@ -94,10 +96,10 @@ cat > namelist << EOF
  input_format="FA"
  READKEY%FANAME='SURFPRESSION','SURFACCPLUIE','SURFACCNEIGE','SURFACCGRAUPEL',
 		'MSLPRESSURE','CLSTEMPERATURE','CLSVENT.ZONAL','CLSVENT.MERIDIEN',
-		'CLSHUMI.SPECIFIQ','SURFINSNEIGE','SURFFLU.LAT.MEVA',
+		'CLSHUMI.SPECIFIQ','SURFFLU.LAT.MEVA',
 		'SURFFLU.LAT.MSUB','SURFFLU.CHA.SENS','SURFRESERV.NEIGE',
 		'CLPMHAUT.MOD.XFU','SURFFLU.RAY.SOLA','SURFFLU.MEVAP.EA',
-		'INTSURFGEOPOTENT'
+		'INTSURFGEOPOTENT','SURFNEBUL.TOTALE'
  infile = "$DEST/PFHARM${DOMAIN}+$instep"
  output_format = "FA2GRIB2",
  outfile = "$OUTDIR/SF/$outstep",
@@ -106,42 +108,45 @@ cat > namelist << EOF
  input_format="FA",
  output_format='MEMORY',
  infile = "$DEST/PFHARM${DOMAIN}+$instep"
- pppkey%shortname='tpsolid',
+ pppkey%shortname='tpsolid','tp',
  pppkey%levtype='surface',
- pppkey%level=000,
- pppkey%tri=004,
+ pppkey%level=000,000,
+ pppkey%tri=004,004,
  lwrite_pponly=.TRUE.,
 /
 &naminterp
  input_format="MEMORY",
  output_format='GRIB2',
  outfile = "$OUTDIR/SF/$outstep.pp",
- readkey%shortname='tpsolid',
+ readkey%shortname='tpsolid','tp',
  readkey%levtype='surface',
- readkey%level=000,
- readkey%tri=004,
+ readkey%level=000,000,
+ readkey%tri=004,004,
 /
 &naminterp
  input_format="FA"
- READKEY%FANAME='SFX.SST','SFX.SIC'
+ READKEY%FANAME='SFX.SST','SFX.SIC','SFX.Z0'
  infile = "$DEST/ICMSHSELE+${instep}.sfx",
  output_format = "FA2GRIB2",
+ lcheck_misval = .FALSE.,
+ rmisval = 1e20,
  outfile = "$OUTDIR/SFX/$outstep",
 /
 EOF
    elif [ "$CTYPE" = "HYD" ]
    then
-cat > namelist << EOF
+#cat > namelist << EOF
+#&naminterp
+# input_format="FA"
+# READKEY%FANAME='SURFIND.TERREMER'
+# infile = "$DEST/ICMSHHARM+$instep"
+# output_format = "FA2GRIB2",
+# outfile = "$OUTDIR/ML/$outstep",
+#/
+cat > $OUTDIR/namelist << EOF
 &naminterp
  input_format="FA"
- READKEY%FANAME='SURFIND.TERREMER'
- infile = "$DEST/ICMSHHARM+$instep"
- output_format = "FA2GRIB2",
- outfile = "$OUTDIR/ML/$outstep",
-/
-&naminterp
- input_format="FA"
- READKEY%FANAME='SURFACCPLUIE','SURFACCNEIGE','SURFACCGRAUPEL',
+ READKEY%FANAME='SURFACCPLUIE','SURFACCNEIGE',
                 'CLSTEMPERATURE','SURFINSNEIGE','SURFRESERV.NEIGE'
  infile = "$DEST/PFHARM${DOMAIN}+$instep"
  output_format = "FA2GRIB2",
@@ -171,20 +176,53 @@ EOF
 	   echo "CTYPE IS $CTYPE "
 	   exit "CTYPE must be either 'AQ' og 'HYD'. Exiting..."
    fi
-
-
-
+#   if [ -z ${NAMLIN+x} ]
+#   then
+#	   echo "No additional namelist given"
+#   else
+#	   cat namelist
+#	   echo "Additional namelist specifications found in $NAMLIN"
+#	   cat $NAMLIN
+#	   cat namelist $NAMLIN > namelist2
+#	   mv namelist2 namelist
+#   fi
+   cat $OUTDIR/namelist
+   
    echo "Postprocessing $outstep..."
 
-   $gl -n namelist
+   $gl -n $OUTDIR/namelist
    echo "Removing namelist"
-   rm namelist
+   rm $OUTDIR/namelist
 
 
-   cat $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep > $OUTDIR/$outstep
+   cat $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep > $OUTDIR/${prfx}_$outstep$sffx
+
+   if [ -z ${NAMLIN+x} ]
+   then
+           echo "No additional namelist given"
+   else
+           echo "Additional namelist specifications found in $NAMLIN"
+           cat $NAMLIN
+cat > $OUTDIR/namelistcrop << EOF
+ infile = "$OUTDIR/${prfx}_$outstep$sffx",
+ outfile = "$OUTDIR/${prfx}_${outstep}_cropped$sffx",
+/
+EOF
+	   cat $NAMLIN $OUTDIR/namelistcrop > $OUTDIR/namelistcrop1
+	   cat $OUTDIR/namelistcrop1
+	   
+	   echo "Cropping..."
+
+           $gl -n $OUTDIR/namelistcrop1
+	   rm $OUTDIR/namelistcr*
+
+   fi
+
+
    echo "Removing sub-files"
    rm $OUTDIR/ML/$outstep $OUTDIR/SF/$outstep $OUTDIR/SF/$outstep.pp $OUTDIR/SFX/$outstep
    echo "Finished step $outstep"
+
 
 done
 echo "Removing subfolders"
